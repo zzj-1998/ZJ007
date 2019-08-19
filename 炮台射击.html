@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body onload="game()">
+    <canvas id="cvs" height="800" width="1000" style="border: 1px solid black;background-color: #0099cc"></canvas>
+    <script>
+        var cvs = document.getElementById('cvs');
+        var ctx = cvs.getContext('2d');
+        var gGame = null;
+
+        function game() {
+            gGame = new Game();
+            gGame.render();
+            gGame.update();
+        }
+        function Game() {
+            var _this = this;
+            this.frame = 0;
+            this.lastFrame = 0;
+            this.CDCode = 60;
+            this.bar = null;
+            this.bullets = [];
+            this.balls = [];
+            this.secondlastFrame = 0;
+            this.secondCDCode = 30;
+            this.lastFrames = 0;
+            this.CDCodes = 6000;
+            this.grade = 2;
+            document.onkeydown = function (e) {
+                if(e.keyCode == 32) {
+                    if(_this.frame >= _this.lastFrame + _this.CDCode && _this.bar.time >= 1) {
+                        _this.bullets.push(new Bullet(5 * _this.grade,_this.bar.angle));
+                        _this.lastFrame = _this.frame;
+                        _this.bar.time--;
+                    }
+                }
+                if(e.keyCode == 13) {
+                    if(_this.frame >= _this.lastFrames + _this.CDCodes && _this.bar.time >= 30) {
+                        _this.bullets.push(new Bullet(500,_this.bar.angle));
+                        _this.lastFrames = _this.frame;
+                        _this.bar.time -= 30;
+                    }
+                }
+            };
+            this.render = function () {
+                _this.bar = new Bar();
+            };
+            this.update = function () {
+                _this.frame++;
+                if(_this.frame >= _this.secondlastFrame + _this.secondCDCode) {
+                    _this.balls.push(new Ball());
+                    _this.secondlastFrame = _this.frame;
+                }
+                if(_this.frame >= _this.lastFrames + _this.CDCodes && _this.bar.time >= 30) {
+                    _this.bar.flag = 1;
+                }
+                else {
+                    _this.bar.flag = 0;
+                }
+                ctx.clearRect(0,0,cvs.width,cvs.height);
+                _this.bar.draw();
+                _this.bullets.forEach(function (val,index) {
+                    val.draw();
+                    val.updatePos();
+                    val.updateStatus();
+                    if(val.dead) {
+                        _this.bullets.splice(index,1);
+                    }
+                    _this.balls.forEach(function (secondval,secondindex) {
+                        if(Math.sqrt((val.positionX - secondval.positionX) * (val.positionX - secondval.positionX) + (val.positionY - secondval.positionY) * (val.positionY - secondval.positionY)) <= val.r + 10) {
+                            _this.balls.splice(secondindex,1);
+                            _this.bar.score++;
+                            _this.bar.time++;
+                            if(_this.grade < 10) {
+                                if(_this.bar.score % 10 == 0) {
+                                    _this.grade++;
+                                    _this.bar.flags = 1;
+                                }
+                                else {
+                                    _this.bar.flags = 0;
+                                }
+                            }
+                        }
+                    });
+                });
+                _this.balls.forEach(function (val,index) {
+                    val.draw();
+                    val.updatePos();
+                    val.updateStatus();
+                    if(val.dead) {
+                        _this.balls.splice(index,1);
+                    }
+                });
+                if(_this.bar.time||_this.bullets.length){
+                    window.requestAnimationFrame(_this.update);
+                }
+                else {
+                    alert('You lost, with a score of ' + _this.bar.score);
+                }
+            }
+        }
+        function Bar() {
+            var _this = this;
+            this.angle = 15;
+            this.score = 0;
+            this.flag = 0;
+            this.time = 10;
+            this.flags = 0;
+            this.draw = function () {
+                ctx.save();
+                ctx.beginPath();
+                ctx.fillStyle = 'green';
+                ctx.arc(cvs.width/2,cvs.height,100,0,Math.PI*2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.fillStyle = "black";
+                ctx.font = '24px arial';
+                ctx.fillText('分数：' + _this.score,0,24);
+                ctx.beginPath();
+                ctx.fillStyle = "black";
+                ctx.font = '24px arial';
+                ctx.fillText('炮弹：' + _this.time,900,24);
+                if(_this.flag == 1) {
+                    ctx.beginPath();
+                    ctx.fillStyle = "black";
+                    ctx.font = '24px arial';
+                    ctx.fillText('充能已完成，按ENTER键使用30个炮弹触发大招',220,24);
+                }
+                if(_this.flags == 1) {
+                    ctx.beginPath();
+                    ctx.fillStyle = "black";
+                    ctx.font = '24px arial';
+                    ctx.fillText('炮弹升级！',450,388);
+                }
+                ctx.beginPath();
+                ctx.translate(cvs.width/2,cvs.height);
+                ctx.rotate(_this.angle);
+                ctx.strokeStyle = 'green';
+                ctx.lineWidth = 2;
+                ctx.moveTo(0,0);
+                ctx.lineTo(150,0);
+                ctx.stroke();
+                ctx.restore();
+            };
+            cvs.onclick = function (e) {
+                _this.angle = Math.atan2(e.pageY - cvs.height,e.pageX - cvs.width / 2);
+            };
+        }
+        function Bullet(r,angle) {
+            var _this = this;
+            this.positionX = cvs.width / 2 + 150 * Math.cos(angle);
+            this.positionY = cvs.height + 150 * Math.sin(angle);
+            this.r = r;
+            this.v = 2;
+            this.dead = false;
+            this.draw = function () {
+                ctx.beginPath();
+                ctx.arc(_this.positionX,_this.positionY,_this.r,0,Math.PI * 2);
+                ctx.fillStyle = 'black';
+                ctx.fill();
+            };
+            this.updatePos = function () {
+                var dt = 1;
+                var s = _this.v * dt;
+                _this.positionX += s * Math.cos(angle);
+                _this.positionY += s * Math.sin(angle);
+            };
+            this.updateStatus = function () {
+                if(_this.positionX - _this.r >= cvs.width || _this.positionX + _this.r < 0 || _this.positionY - _this.r >= cvs.height || _this.positionY + _this.r < 0) {
+                    _this.dead = true;
+                }
+            };
+        }
+        function Ball() {
+            var _this = this;
+            this.positionX = cvs.width * Math.random();
+            this.positionY = cvs.height * 0.1;
+            this.angle = Math.random() * Math.PI;
+            this.v = 1;
+            this.dead = false;
+            this.draw = function () {
+                ctx.beginPath();
+                ctx.arc(_this.positionX,_this.positionY,10,0,Math.PI * 2);
+                ctx.fillStyle = 'red';
+                ctx.fill();
+            };
+            this.updatePos = function () {
+                var dt = 1;
+                var s = _this.v * dt;
+                _this.positionX += s * Math.cos(_this.angle);
+                _this.positionY += s * Math.sin(_this.angle);
+            };
+            this.updateStatus = function () {
+                if(_this.positionX - 10 >= cvs.width|| _this.positionX + 10 < 0 || _this.positionY - 10 >= cvs.height || _this.positionY + 10 < 0) {
+                    _this.dead = true;
+                }
+            };
+        }
+    </script>
+</body>
+</html>

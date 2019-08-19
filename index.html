@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body onload="game()">
+<img src="./NPC2.png" alt="" id="imgs">
+<canvas id="cvs" height="500" width="500" style="border: 1px solid black"></canvas>
+<script>
+    var cvs = document.getElementById('cvs');
+    var ctx = cvs.getContext('2d');
+    var img = document.getElementById('imgs');
+    var gGame = null;
+    function game() {
+        gGame = new Person();
+        gGame.update();
+    }
+    function Person() {
+        var _this = this;
+        this.currentFrame = 0;
+        this.direction = 0;
+        this.left = 0;
+        this.top = 0;
+        this.draw = function () {
+            ctx.beginPath();
+            ctx.drawImage(img,_this.currentFrame * img.width / 4,_this.direction * img.height / 4,img.width / 4,img.height / 4,_this.left,_this.top,img.width / 4,img.height / 4);
+        };
+        this.updateFrame = function () {
+            _this.currentFrame = ++_this.currentFrame >= 4 ? 0 : _this.currentFrame;
+        };
+        this.updatePos = function () {
+            switch (_this.direction) {
+                case 0:{
+                    if(_this.top <= cvs.height - img.height / 4) {
+                        _this.top++;
+                    }
+                }break;
+                case 1:{
+                    if(_this.left >= 0) {
+                        _this.left--;
+                    }
+                }break;
+                case 2:{
+                    if(_this.left <= cvs.width - img.width / 4) {
+                        _this.left++;
+                    }
+                }break;
+                case 3:{
+                    if(_this.top >= 0) {
+                        _this.top--;
+                    }
+                }
+            }
+
+        };
+        document.onkeydown = function (e) {
+            switch (e.keyCode) {
+                case 37:{
+                    _this.direction = 1;
+                }break;
+                case 38:{
+                    _this.direction = 3;
+                }break;
+                case 39:{
+                    _this.direction = 2;
+                }break;
+                case 40:{
+                    _this.direction = 0;
+                }
+            }
+        };
+        this.update = function () {
+            ctx.clearRect(0,0,cvs.width,cvs.height);
+            _this.draw();
+            _this.updateFrame();
+            _this.updatePos();
+            setTimeout(_this.update,200);
+            //window.requestAnimationFrame(_this.update);
+        }
+    }
+</script>
+</body>
+</html>

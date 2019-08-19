@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body onload="game()">
+    <canvas id="cvs" width="600" height="600" style="border: 1px solid black"></canvas>
+    <script>
+        var cvs = document.getElementById('cvs');
+        var ctx = cvs.getContext('2d');
+        var gGame = null;
+        function game() {
+            gGame = new Star(150,100);
+            gGame.update();
+        }
+
+        function angleTo(angle) {
+            return Math.PI * angle / 180;
+        }
+        function Star(R,r) {
+            var _this = this;
+            this.R = R;
+            this.r = r;
+            this.angle = 0;
+            this.draw = function () {
+                var originDotX = 0;
+                var originDotY = -_this.R;
+                var firstDotX = _this.r * Math.cos(angleTo(54));
+                var firstDotY = -_this.r * Math.sin(angleTo(54));
+                var secondDotX =  _this.R * Math.cos(angleTo(18));
+                var secondDotY =  -_this.R * Math.sin(angleTo(18));
+                ctx.save();
+                ctx.beginPath();
+                ctx.translate(300,300);
+                ctx.rotate(angleTo(_this.angle));
+                ctx.moveTo(originDotX,originDotY);
+                ctx.lineTo(firstDotX,firstDotY);
+                ctx.lineTo(secondDotX,secondDotY);
+                ctx.stroke();
+                ctx.restore();
+            };
+            this.updateAngle = function () {
+                if(_this.angle <= 360) {
+                    _this.angle += 72;
+                }
+            };
+            this.update = function () {
+                if(_this.angle <= 360) {
+                    _this.draw();
+                    _this.updateAngle();
+                    window.requestAnimationFrame(_this.update);
+                }
+            };
+        }
+    </script>
+</body>
+</html>
